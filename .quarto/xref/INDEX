@@ -4,5 +4,8 @@
   },
   "about.qmd": {
     "about.html": "67a1aad0"
+  },
+  "qmds/base.qmd": {
+    "base.html": "041a9ea3"
   }
 }

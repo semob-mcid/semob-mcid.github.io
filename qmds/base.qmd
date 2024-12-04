@@ -1,0 +1,211 @@
+
+---
+title: "Base completa SEMOB"
+format:
+    html:
+        page-layout: custom
+        toc: false
+css: /index.css
+---
+
+
+
+```{python}
+#| label: importação da base de dados
+#| eval: false
+#| echo: false
+# Automatizando e simplificando a importação da base
+
+import os
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+import pandas as pd
+import datetime
+
+# Carregar as variáveis do arquivo .env
+load_dotenv("/Users/ramson./Documents/_Projetos/semob-mcid.github.io/config.env")
+
+# Obter as credenciais do banco de dados
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT', '5432')  # Porta padrão 5432
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+
+# Criar a string de conexão com o banco de dados PostgreSQL
+DATABASE_URL = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+
+# Criar a engine do SQLAlchemy
+engine = create_engine(DATABASE_URL)
+
+# Defina o schema e a tabela
+schema_name = 'semob'
+table_name = 'base2023_completa'
+
+# Caminho do arquivo Parquet
+parquet_file_path = 'qmds/base.parquet'
+
+# Obter a data atual
+today = datetime.date.today()
+
+# Verificar se o arquivo existe e foi criado hoje
+def is_file_created_today(file_path):
+    if os.path.exists(file_path):
+        # Obter a data de criação ou última modificação
+        creation_time = os.path.getctime(file_path)
+        creation_date = datetime.date.fromtimestamp(creation_time)
+        return creation_date == today
+    return False
+
+# Lógica para verificar e usar ou recriar o arquivo Parquet
+if is_file_created_today(parquet_file_path):
+    print("Arquivo Parquet encontrado e criado hoje. Carregando a base do arquivo.")
+    # Carregar o arquivo Parquet em um DataFrame
+    base = pd.read_parquet(parquet_file_path, engine='pyarrow')  # Ou 'fastparquet'
+else:
+    print("Arquivo Parquet inexistente ou desatualizado. Acessando o banco de dados.")
+    # Criar o diretório se não existir
+    os.makedirs(os.path.dirname(parquet_file_path), exist_ok=True)
+    
+    # Criar a query SQL
+    query = f"""
+    SELECT * FROM {schema_name}.{table_name};
+    """
+    
+    # Executar a query e carregar o resultado em um DataFrame
+    base = pd.read_sql_query(query, con=engine)
+    
+    # Salvar o DataFrame em um arquivo Parquet
+    base.to_parquet(parquet_file_path, engine='pyarrow')
+    print(f"Base salva como arquivo Parquet em: {parquet_file_path}")
+
+base_ativos = base.query('bln_ativo_semob == "SIM"')
+df = base.query('bln_ativo_semob == "NAO"')
+# Exibir as primeiras linhas da base
+print(base_ativos.head())
+```
+
+```{python}
+#| echo: false
+from datetime import datetime
+```
+:::{.callout-tip title="Data de atualização" collapse="false"}
+Atualizado em: `{python} datetime.today().strftime('%d/%m/%Y')`
+:::
+
+```{python}
+#| echo: false
+import pandas as pd
+
+# Nome do arquivo
+arquivo = "base_semob_inativos.csv"
+
+# Lê o arquivo CSV e salva como um DataFrame
+df = pd.read_csv(arquivo, sep=';') #,header=1  , skiprows=1
+
+# Exibe as primeiras linhas do DataFrame
+#print(df.head())
+```
+
+
+::: content-block
+```{python}
+#| echo: false
+import itables.options as opt
+from itables import init_notebook_mode, show
+from itables.downsample import as_nbytes, nbytes
+from itables.sample_dfs import get_indicators
+from itables import JavascriptCode
+from datetime import datetime
+import locale
+
+# Definir o local para o Brasil
+locale.setlocale(locale.LC_NUMERIC, 'pt_BR.UTF-8')
+
+init_notebook_mode(all_interactive=True)
+
+#opt.column_filters = 'footer'
+#opt.columnDefs = [{"className": "dt-center", "targets": "_all"}]
+opt.showIndex = False
+opt.lengthMenu = [ 20, 50, 100, 200, 500]
+opt.maxBytes = "5MB"
+
+# Função para limpar e converter valores monetários
+def clean_and_convert(column):
+    return pd.to_numeric(
+        column.str.replace('.', '', regex=False).str.replace(',', '.', regex=False),
+        errors='coerce'
+    )
+
+# Obtém a data de hoje no formato desejado
+data_hoje = datetime.today().strftime('%Y%m%d')
+
+# Exibir com o símbolo de porcentagem
+#df['Execução (%)'] = df['Execução (%)'].apply(lambda x: f"{x:.2f}%")
+
+# Lista de colunas a serem processadas
+colunas_monetarias = ['Valor de Repasse/Empréstimo','Valor Empenhado', 'Valor Desbloqueado', 'Valor Liberado']
+
+df['Município'] = df['Município'].str.title()
+
+# Limpar e converter as colunas
+df[colunas_monetarias] = df[colunas_monetarias].apply(clean_and_convert)
+
+# Formatar os valores monetários e de porcentagem com 2 casas decimais
+df[colunas_monetarias] = df[colunas_monetarias].map(lambda x: f"{x:,.2f}" if pd.notnull(x) else "")
+
+# Passo 1: Substituir vírgulas por pontos e converter para numérico
+df['Execução (%)'] = df['Execução (%)'].str.replace(',', '.', regex=False)
+df['Execução (%)'] = pd.to_numeric(df['Execução (%)'], errors='coerce')
+
+# Passo 2: Multiplicar por 100
+df['Execução (%)'] = df['Execução (%)'] * 100
+
+
+# Ordena o DataFrame por 'coluna1' e 'coluna2'
+df = df.sort_values(by=[ 'Unidade Federativa','Município','Contrato'])
+
+df = df.reset_index(drop=True)
+
+# Renomear uma coluna
+df.rename(columns={"Unidade Federativa": "UF"}, inplace=True)
+
+show(
+    df,  # Exibe o DataFrame 'df' utilizando a função 'show' para renderização interativa na interface.
+    #footer=True,  # A linha de rodapé (footer) está comentada, mas se fosse ativada, exibiria informações adicionais no rodapé da tabela.
+    classes="display nowrap cell-border",  # Define classes CSS para estilização da tabela: 'display' para exibição padrão, 'nowrap' para evitar quebra de linha nas células e 'cell-border' para adicionar bordas nas células.
+    language={"url": "https://cdn.datatables.net/plug-ins/2.0.2/i18n/pt-BR.json"},  # Define o idioma da tabela como português do Brasil, utilizando um arquivo de tradução hospedado online.
+    select=True,  # Habilita a seleção de linhas na tabela.
+    keys=True,  # Permite a navegação entre as linhas utilizando teclas de direção do teclado.
+    buttons=[  # Define os botões adicionais na interface da tabela.
+        "pageLength",  # Adiciona o botão de seleção de quantidade de páginas (número de registros exibidos por página).
+        {
+            "extend": "colvis",  # Botão de visibilidade das colunas.
+            "collectionLayout": "fixed columns",  # Layout do menu de visibilidade das colunas será fixo (não se move).
+            "popoverTitle": "Quais colunas você quer que apareça?"  # Título do popover que aparece quando o botão de visibilidade é acionado.
+        },
+        {
+            "extend": "excelHtml5",  # Botão para exportar os dados da tabela para um arquivo Excel.
+            "title": f"{data_hoje}_base_semob",  # O nome do arquivo exportado será composto pela data atual e o prefixo 'base_semob'.
+            "exportOptions": {"columns": ":visible"}  # Apenas as colunas visíveis serão exportadas para o Excel.
+        }
+    ],
+    layout={"top1": "searchPanes"},  # Define o layout da tabela, no qual a área de pesquisa ('searchPanes') será posicionada na parte superior.
+    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns": [1, 2, 4, 9]},  # Configura o painel de pesquisa para ser exibido em 4 colunas, permitindo que os filtros sejam aplicados de forma cascata nas colunas 1, 2, 4 e 9.
+    columnDefs=[  # Define propriedades específicas para as colunas da tabela.
+        {"targets": 5, "title": "Valor Repasse/<br>Empréstimo"},  # Altera o título da coluna 5, com a adição de uma quebra de linha HTML no título.
+        {"targets": 3, "visible": False},  # Torna a coluna 3 invisível.
+        {"width": "100px", "targets": "_all"},  # Define a largura de todas as colunas como 100px.
+        {"className": "dt-center", "targets": [0,1,2,4,9]},  # Aplica a classe CSS 'dt-center' para centralizar o conteúdo das colunas 0, 1, 2, 4 e 9.
+        {"className": "dt-left", "targets": [3]},  # Aplica a classe CSS 'dt-left' para alinhar à esquerda o conteúdo da coluna 3.
+        {"className": "dt-right", "targets": [5,6,7,8,10]}  # Aplica a classe CSS 'dt-right' para alinhar à direita o conteúdo das colunas 5, 6, 7, 8 e 10.
+    ],
+    style="width:900px",  # Define o estilo de largura para a tabela, ajustando a largura total para 900px.
+    autoWidth=False  # Desativa a largura automática das colunas, permitindo que a largura de cada coluna seja definida manualmente.
+)
+
+
+
+```
+
+:::
