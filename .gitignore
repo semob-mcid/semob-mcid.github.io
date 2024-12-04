@@ -1,1 +1,5 @@
 /.quarto/
+- Ignorar todos os arquivos `.env` em qualquer lugar do projeto:
+  ```plaintext
+**/.env
+
