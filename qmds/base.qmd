@@ -12,7 +12,7 @@ css: /index.css
 
 ```{python}
 #| label: importação da base de dados
-#| eval: false
+#| eval: true
 #| echo: false
 # Automatizando e simplificando a importação da base
 
@@ -39,11 +39,11 @@ DATABASE_URL = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 engine = create_engine(DATABASE_URL)
 
 # Defina o schema e a tabela
-schema_name = 'semob'
-table_name = 'base2023_completa'
+schema_name = 'mcid_carteira_investimento'
+table_name = 'tab_carteira_investimento_mcid tci'
 
 # Caminho do arquivo Parquet
-parquet_file_path = 'qmds/base.parquet'
+parquet_file_path = 'qmds/tci.parquet'
 
 # Obter a data atual
 today = datetime.date.today()
@@ -61,7 +61,7 @@ def is_file_created_today(file_path):
 if is_file_created_today(parquet_file_path):
     print("Arquivo Parquet encontrado e criado hoje. Carregando a base do arquivo.")
     # Carregar o arquivo Parquet em um DataFrame
-    base = pd.read_parquet(parquet_file_path, engine='pyarrow')  # Ou 'fastparquet'
+    tci = pd.read_parquet(parquet_file_path, engine='pyarrow')  # Ou 'fastparquet'
 else:
     print("Arquivo Parquet inexistente ou desatualizado. Acessando o banco de dados.")
     # Criar o diretório se não existir
@@ -73,16 +73,16 @@ else:
     """
     
     # Executar a query e carregar o resultado em um DataFrame
-    base = pd.read_sql_query(query, con=engine)
+    tci = pd.read_sql_query(query, con=engine)
     
     # Salvar o DataFrame em um arquivo Parquet
-    base.to_parquet(parquet_file_path, engine='pyarrow')
+    tci.to_parquet(parquet_file_path, engine='pyarrow')
     print(f"Base salva como arquivo Parquet em: {parquet_file_path}")
 
-base_ativos = base.query('bln_ativo_semob == "SIM"')
-df = base.query('bln_ativo_semob == "NAO"')
+df = tci.query('bln_carteira_ativa_mcid == "SIM" and txt_sigla_secretaria == "SEMOB"')
+base_inativos_semob = tci.query('bln_carteira_ativa_mcid != "SIM" and txt_sigla_secretaria == "SEMOB"')
 # Exibir as primeiras linhas da base
-print(base_ativos.head())
+#print(df.head())
 ```
 
 ```{python}
@@ -93,25 +93,12 @@ from datetime import datetime
 Atualizado em: `{python} datetime.today().strftime('%d/%m/%Y')`
 :::
 
-```{python}
-#| echo: false
-import pandas as pd
-
-# Nome do arquivo
-arquivo = "base_semob_inativos.csv"
-
-# Lê o arquivo CSV e salva como um DataFrame
-df = pd.read_csv(arquivo, sep=';') #,header=1  , skiprows=1
-
-df = df.head(1000)
-# Exibe as primeiras linhas do DataFrame
-#print(df.head())
-```
 
 
 ::: content-block
 ```{python}
 #| echo: false
+#| label: GErando a tabela
 import itables.options as opt
 from itables import init_notebook_mode, show
 from itables.downsample import as_nbytes, nbytes
@@ -131,12 +118,6 @@ opt.showIndex = False
 opt.lengthMenu = [ 20, 50, 100, 200, 500]
 opt.maxBytes = "5MB"
 
-# Função para limpar e converter valores monetários
-def clean_and_convert(column):
-    return pd.to_numeric(
-        column.str.replace('.', '', regex=False).str.replace(',', '.', regex=False),
-        errors='coerce'
-    )
 
 # Obtém a data de hoje no formato desejado
 data_hoje = datetime.today().strftime('%Y%m%d')
@@ -145,31 +126,31 @@ data_hoje = datetime.today().strftime('%Y%m%d')
 #df['Execução (%)'] = df['Execução (%)'].apply(lambda x: f"{x:.2f}%")
 
 # Lista de colunas a serem processadas
-colunas_monetarias = ['Valor de Repasse/Empréstimo','Valor Empenhado', 'Valor Desbloqueado', 'Valor Liberado']
+#colunas_monetarias = ['Valor de Repasse/Empréstimo','Valor Empenhado', 'Valor Desbloqueado', 'Valor Liberado']
 
-df['Município'] = df['Município'].str.title()
+df['municipio'] = df['txt_municipio'].str.title()
 
 # Limpar e converter as colunas
-df[colunas_monetarias] = df[colunas_monetarias].apply(clean_and_convert)
+#df[colunas_monetarias] = df[colunas_monetarias].apply(clean_and_convert)
 
 # Formatar os valores monetários e de porcentagem com 2 casas decimais
-df[colunas_monetarias] = df[colunas_monetarias].map(lambda x: f"{x:,.2f}" if pd.notnull(x) else "")
+#df[colunas_monetarias] = df[colunas_monetarias].map(lambda x: f"{x:,.2f}" if pd.notnull(x) else "")
 
 # Passo 1: Substituir vírgulas por pontos e converter para numérico
-df['Execução (%)'] = df['Execução (%)'].str.replace(',', '.', regex=False)
-df['Execução (%)'] = pd.to_numeric(df['Execução (%)'], errors='coerce')
+#df['Execução (%)'] = df['Execução (%)'].str.replace(',', '.', regex=False)
+#df['Execução (%)'] = pd.to_numeric(df['Execução (%)'], errors='coerce')
 
 # Passo 2: Multiplicar por 100
-df['Execução (%)'] = df['Execução (%)'] * 100
+#df['Execução (%)'] = df['Execução (%)'] * 100
 
 
 # Ordena o DataFrame por 'coluna1' e 'coluna2'
-df = df.sort_values(by=[ 'Unidade Federativa','Município','Contrato'])
+df = df.sort_values(by=[ 'txt_uf','txt_municipio','cod_contrato'])
 
 df = df.reset_index(drop=True)
 
 # Renomear uma coluna
-df.rename(columns={"Unidade Federativa": "UF"}, inplace=True)
+#df.rename(columns={"Unidade Federativa": "UF"}, inplace=True)
 
 show(
     df,  # Exibe o DataFrame 'df' utilizando a função 'show' para renderização interativa na interface.
@@ -192,14 +173,15 @@ show(
         }
     ],
     layout={"top1": "searchPanes"},  # Define o layout da tabela, no qual a área de pesquisa ('searchPanes') será posicionada na parte superior.
-    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns-4": [1,2,4,9]},  # Configura o painel de pesquisa para ser exibido em 4 colunas, permitindo que os filtros sejam aplicados de forma cascata nas colunas 1, 2, 4 e 9.
+    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns-4": [ 7, 19, 24, 51]
+    },  # Configura o painel de pesquisa para ser exibido em 4 colunas, permitindo que os filtros sejam aplicados de forma cascata nas colunas 1, 2, 4 e 9.
     columnDefs=[  # Define propriedades específicas para as colunas da tabela.
         {"targets": 5, "title": "Valor Repasse/<br>Empréstimo"},  # Altera o título da coluna 5, com a adição de uma quebra de linha HTML no título.
         {"targets": 3, "visible": False},  # Torna a coluna 3 invisível.
         {"width": "100px", "targets": "_all"},  # Define a largura de todas as colunas como 100px.
-        {"className": "dt-center", "targets": [0,1,2,4,9]},  # Aplica a classe CSS 'dt-center' para centralizar o conteúdo das colunas 0, 1, 2, 4 e 9.
-        {"className": "dt-left", "targets": [3]},  # Aplica a classe CSS 'dt-left' para alinhar à esquerda o conteúdo da coluna 3.
-        {"className": "dt-right", "targets": [5,6,7,8,10]}  # Aplica a classe CSS 'dt-right' para alinhar à direita o conteúdo das colunas 5, 6, 7, 8 e 10.
+        #{"className": "dt-center", "targets": [1,2,4,9]},  # Aplica a classe CSS 'dt-center' para centralizar o conteúdo das colunas 0, 1, 2, 4 e 9.
+        #{"className": "dt-left", "targets": [3]},  # Aplica a classe CSS 'dt-left' para alinhar à esquerda o conteúdo da coluna 3.
+        #{"className": "dt-right", "targets": [5,6,7,8,10]}  # Aplica a classe CSS 'dt-right' para alinhar à direita o conteúdo das colunas 5, 6, 7, 8 e 10.
     ],
     style="width:900px",  # Define o estilo de largura para a tabela, ajustando a largura total para 900px.
     autoWidth=False  # Desativa a largura automática das colunas, permitindo que a largura de cada coluna seja definida manualmente.
