@@ -176,10 +176,10 @@ show(
         }
     ],
     layout={"top1": "searchPanes"},  # Define o layout da tabela, no qual a área de pesquisa ('searchPanes') será posicionada na parte superior.
-    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns": [ 6, 19, 24, 51]
+    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns": [ 19, 21, 24, 51]
     },  # Configura o painel de pesquisa para ser exibido em 4 colunas, permitindo que os filtros sejam aplicados de forma cascata nas colunas 1, 2, 4 e 9.
     columnDefs=[  # Define propriedades específicas para as colunas da tabela.
-        {"targets": 5, "title": "Valor Repasse/<br>Empréstimo"},  # Altera o título da coluna 5, com a adição de uma quebra de linha HTML no título.
+        #{"targets": 5, "title": "Valor Repasse/<br>Empréstimo"},  # Altera o título da coluna 5, com a adição de uma quebra de linha HTML no título.
         {"targets": 3, "visible": False},  # Torna a coluna 3 invisível.
         {"width": "100px", "targets": "_all"},  # Define a largura de todas as colunas como 100px.
         #{"className": "dt-center", "targets": [1,2,4,9]},  # Aplica a classe CSS 'dt-center' para centralizar o conteúdo das colunas 0, 1, 2, 4 e 9.
