@@ -87,6 +87,7 @@ base_inativos_semob = tci.query('bln_carteira_ativa_mcid != "SIM" and txt_sigla_
 
 ```{python}
 #| echo: false
+#| label: Definindo a data de hoje
 from datetime import datetime
 ```
 :::{.callout-tip title="Data de atualização" collapse="false"}
@@ -98,7 +99,7 @@ Atualizado em: `{python} datetime.today().strftime('%d/%m/%Y')`
 ::: content-block
 ```{python}
 #| echo: false
-#| label: GErando a tabela
+#| label: Gerando a tabela
 import itables.options as opt
 from itables import init_notebook_mode, show
 from itables.downsample import as_nbytes, nbytes
@@ -128,7 +129,7 @@ data_hoje = datetime.today().strftime('%Y%m%d')
 # Lista de colunas a serem processadas
 #colunas_monetarias = ['Valor de Repasse/Empréstimo','Valor Empenhado', 'Valor Desbloqueado', 'Valor Liberado']
 
-df['municipio'] = df['txt_municipio'].str.title()
+#df['municipio'] = df['txt_municipio'].str.title()
 
 # Limpar e converter as colunas
 #df[colunas_monetarias] = df[colunas_monetarias].apply(clean_and_convert)
@@ -173,7 +174,7 @@ show(
         }
     ],
     layout={"top1": "searchPanes"},  # Define o layout da tabela, no qual a área de pesquisa ('searchPanes') será posicionada na parte superior.
-    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns-4": [ 7, 19, 24, 51]
+    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns": [ 6, 19, 24, 51]
     },  # Configura o painel de pesquisa para ser exibido em 4 colunas, permitindo que os filtros sejam aplicados de forma cascata nas colunas 1, 2, 4 e 9.
     columnDefs=[  # Define propriedades específicas para as colunas da tabela.
         {"targets": 5, "title": "Valor Repasse/<br>Empréstimo"},  # Altera o título da coluna 5, com a adição de uma quebra de linha HTML no título.
