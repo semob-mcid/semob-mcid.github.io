@@ -152,6 +152,8 @@ df = df.reset_index(drop=True)
 
 # Renomear uma coluna
 #df.rename(columns={"Unidade Federativa": "UF"}, inplace=True)
+# Transformar a coluna 'coluna1' em string
+df['cod_contrato'] = df['cod_contrato'].astype(str)
 
 show(
     df,  # Exibe o DataFrame 'df' utilizando a função 'show' para renderização interativa na interface.
