@@ -59,11 +59,12 @@ def is_file_created_today(file_path):
 
 # Lógica para verificar e usar ou recriar o arquivo Parquet
 if is_file_created_today(parquet_file_path):
-    print("Arquivo Parquet encontrado e criado hoje. Carregando a base do arquivo.")
+    #print("Arquivo Parquet encontrado e criado hoje. Carregando a base do arquivo.")
+    
     # Carregar o arquivo Parquet em um DataFrame
     tci = pd.read_parquet(parquet_file_path, engine='pyarrow')  # Ou 'fastparquet'
 else:
-    print("Arquivo Parquet inexistente ou desatualizado. Acessando o banco de dados.")
+    #print("Arquivo Parquet inexistente ou desatualizado. Acessando o banco de dados.")
     # Criar o diretório se não existir
     os.makedirs(os.path.dirname(parquet_file_path), exist_ok=True)
     
@@ -83,6 +84,9 @@ df = tci.query('bln_carteira_ativa_mcid == "SIM" and txt_sigla_secretaria == "SE
 base_inativos_semob = tci.query('bln_carteira_ativa_mcid != "SIM" and txt_sigla_secretaria == "SEMOB"')
 # Exibir as primeiras linhas da base
 #print(df.head())
+
+df = df[['cod_tci','num_convenio','cod_proposta','num_proposta','cod_contrato','bln_carga_legado_tci','cod_cipi_projeto_invest','cod_cipi_intervencao','id_governa','num_generico_contrato','txt_origem','txt_uf','txt_regiao','cod_ibge_6dig','cod_ibge_7dig','txt_municipio','txt_tipo_instrumento','dsc_objeto_instrumento','dsc_concedente','txt_sigla_secretaria','bln_pac','dsc_fase_pac','txt_tomador','cnpj_agente_financeiro','txt_agente_financeiro','num_ano_instrumento','dte_assinatura_contrato','dte_fim_contrato','dte_inicio_obra','dte_fim_obra','bln_carteira_mcid','bln_carteira_ativa_mcid','bln_carteira_andamento','dsc_situacao_contrato_mcid','dsc_situacao_objeto_mcid','txt_motivo_paralisacao_mcid','txt_principal_motivo_paralisacao','dsc_detalhamento_motivo_paralisacao','dsc_motivo_paralisacao','dte_paralisacao','dsc_fonte','txt_fonte','dsc_acao_governo','vlr_investimento','vlr_repasse','vlr_contrapartida','vlr_empenhado','vlr_desembolsado','vlr_desbloqueado','vlr_pago','vlr_a_empenhar','vlr_a_desembolsar','vlr_a_executar_financ','vlr_a_pagar','vlr_taxa_adm','prc_desembolsado','prc_execucao_financ','prc_execucao_fisica','txt_link','dte_carga','bln_emenda','num_emendas','qtd_emendas','qtd_uh','qtd_entregues','qtd_uh_distratadas','qtd_vigentes','dsc_situacao_atual','dte_atualizacao_situacao_atual','dsc_modalidade_aplicacao']]
+
 ```
 
 ```{python}
@@ -127,7 +131,7 @@ data_hoje = datetime.today().strftime('%Y%m%d')
 #df['Execução (%)'] = df['Execução (%)'].apply(lambda x: f"{x:.2f}%")
 
 # Lista de colunas a serem processadas
-#colunas_monetarias = ['Valor de Repasse/Empréstimo','Valor Empenhado', 'Valor Desbloqueado', 'Valor Liberado']
+colunas_monetarias = ['vlr_investimento','vlr_repasse','vlr_contrapartida','vlr_empenhado','vlr_desembolsado','vlr_desbloqueado','vlr_pago','vlr_a_empenhar','vlr_a_desembolsar','vlr_a_executar_financ','vlr_a_pagar','vlr_taxa_adm','prc_desembolsado','prc_execucao_financ','prc_execucao_fisica']
 
 #df['municipio'] = df['txt_municipio'].str.title()
 
@@ -135,7 +139,7 @@ data_hoje = datetime.today().strftime('%Y%m%d')
 #df[colunas_monetarias] = df[colunas_monetarias].apply(clean_and_convert)
 
 # Formatar os valores monetários e de porcentagem com 2 casas decimais
-#df[colunas_monetarias] = df[colunas_monetarias].map(lambda x: f"{x:,.2f}" if pd.notnull(x) else "")
+df[colunas_monetarias] = df[colunas_monetarias].map(lambda x: f"{x:,.2f}" if pd.notnull(x) else "")
 
 # Passo 1: Substituir vírgulas por pontos e converter para numérico
 #df['Execução (%)'] = df['Execução (%)'].str.replace(',', '.', regex=False)
@@ -152,8 +156,9 @@ df = df.reset_index(drop=True)
 
 # Renomear uma coluna
 #df.rename(columns={"Unidade Federativa": "UF"}, inplace=True)
-# Transformar a coluna 'coluna1' em string
-df['cod_contrato'] = df['cod_contrato'].astype(str)
+
+# Transformar a coluna 'cod_contrato' em string
+#df['cod_contrato'] = df['cod_contrato'].astype(str)
 
 show(
     df,  # Exibe o DataFrame 'df' utilizando a função 'show' para renderização interativa na interface.
@@ -176,13 +181,13 @@ show(
         }
     ],
     layout={"top1": "searchPanes"},  # Define o layout da tabela, no qual a área de pesquisa ('searchPanes') será posicionada na parte superior.
-    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns": [ 19, 21, 24, 51]
+    searchPanes={"layout": "columns-4", "cascadePanes": True, "columns": [ 11, 15, 16, 34]
     },  # Configura o painel de pesquisa para ser exibido em 4 colunas, permitindo que os filtros sejam aplicados de forma cascata nas colunas 1, 2, 4 e 9.
     columnDefs=[  # Define propriedades específicas para as colunas da tabela.
         #{"targets": 5, "title": "Valor Repasse/<br>Empréstimo"},  # Altera o título da coluna 5, com a adição de uma quebra de linha HTML no título.
-        {"targets": 3, "visible": False},  # Torna a coluna 3 invisível.
+        {"targets": 17, "visible": False},  # Torna a coluna 3 invisível.
         {"width": "100px", "targets": "_all"},  # Define a largura de todas as colunas como 100px.
-        #{"className": "dt-center", "targets": [1,2,4,9]},  # Aplica a classe CSS 'dt-center' para centralizar o conteúdo das colunas 0, 1, 2, 4 e 9.
+        {"className": "dt-center", "targets": [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57]},  # Aplica a classe CSS 'dt-center' para centralizar o conteúdo das colunas 0, 1, 2, 4 e 9.
         #{"className": "dt-left", "targets": [3]},  # Aplica a classe CSS 'dt-left' para alinhar à esquerda o conteúdo da coluna 3.
         #{"className": "dt-right", "targets": [5,6,7,8,10]}  # Aplica a classe CSS 'dt-right' para alinhar à direita o conteúdo das colunas 5, 6, 7, 8 e 10.
     ],
