@@ -1,12 +1,5 @@
 [
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "semob-mcid.github.io",
-    "section": "",
-    "text": "This is a New Quarto website semob-mcid.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
-  },
-  {
     "objectID": "about.html",
     "href": "about.html",
     "title": "About",
@@ -14,10 +7,10 @@
     "text": "About this site"
   },
   {
-    "objectID": "qmds/base_pac.html",
-    "href": "qmds/base_pac.html",
+    "objectID": "index.html",
+    "href": "index.html",
     "title": "semob-mcid.github.io",
     "section": "",
-    "text": "Em construção…"
+    "text": "This is a New Quarto website semob-mcid.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites."
   }
 ]
