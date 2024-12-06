@@ -8,8 +8,13 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - href: qmds/base.qmd
-        text: Base Inativos
+      - text: Bases
+        menu:
+        - text: Base Ativos
+          href: qmds/base.qmd
+        - text: Base PAC
+          href: qmds/base_pac.qmd
+        
       - about.qmd
 
 format:
